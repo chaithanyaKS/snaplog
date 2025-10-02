@@ -1,2 +1,2 @@
 dev: 
-	odin run . -debug -- init
+	odin run . -debug -- commit

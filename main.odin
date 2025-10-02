@@ -72,18 +72,19 @@ git_commit_repo :: proc() -> (err: os.Error) {
 
 		database.store(&db, &blob)
 
-		// ent := entry.init(path, blob.oid)
-		// append(&entries, ent^)
+		ent := entry.init(path, blob.oid)
+		append(&entries, ent)
 	}
 
-	// tre := tree.init(entries)
-	// database.store(&db, tre)
+	tre := tree.init(entries)
+	database.store(&db, &tre)
 
 	for f in files {
 		delete_string(f)
 	}
 
 	delete(files)
+	delete(entries)
 
 	return nil
 }

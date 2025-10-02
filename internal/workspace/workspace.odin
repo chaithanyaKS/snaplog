@@ -1,10 +1,10 @@
 package workspace
 
-import "core:crypto/legacy/sha1"
 import "core:fmt"
 import os "core:os/os2"
 import "core:path/filepath"
 import "core:slice"
+import "core:strings"
 
 IGNORE :: []string{".", "..", ".git", ".snap", "snaplog"}
 
@@ -17,13 +17,15 @@ init :: proc(root_path: string) -> (ws: Workspace) {
 	return
 }
 
-list_files :: proc(ws: ^Workspace) -> (files_list: [dynamic]string, err: os.Error) {
+list_files :: proc(ws: ^Workspace, files_list: ^[dynamic]string) -> (err: os.Error) {
 	fd := os.open(ws.path_name) or_return
+	defer os.close(fd)
 	file_info := os.read_dir(fd, 0, context.temp_allocator) or_return
 
 	for f in file_info {
 		if !slice.contains(IGNORE, f.name) && f.type == .Regular {
-			append(&files_list, f.name) or_return
+			name := strings.clone(f.name) or_return
+			append(files_list, name) or_return
 		}
 	}
 
@@ -31,7 +33,7 @@ list_files :: proc(ws: ^Workspace) -> (files_list: [dynamic]string, err: os.Erro
 }
 
 read_file :: proc(ws: ^Workspace, path: string) -> (data: []byte, err: os.Error) {
-	path := filepath.join([]string{ws.path_name, path})
+	path := os.join_path([]string{ws.path_name, path}, context.temp_allocator) or_return
 	data = os.read_entire_file_from_path(path, context.temp_allocator) or_return
 
 	return

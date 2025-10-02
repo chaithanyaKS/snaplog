@@ -1,6 +1,7 @@
 package database
 
 import "../blob/"
+import "../tree/"
 import "core:crypto/legacy/keccak"
 import "core:encoding/hex"
 import "core:hash"
@@ -14,7 +15,7 @@ import "core:strings"
 
 import "vendor:zlib"
 
-TEMP_CHARS := [?]u8 {
+TEMP_CHARS := [?]byte {
 	'0',
 	'1',
 	'2',
@@ -88,22 +89,39 @@ init :: proc(db_path: string) -> (db: Database) {
 	return
 }
 
-store :: proc(db: ^Database, blb: ^blob.Blob) {
-	sb: strings.Builder
-	content := fmt.sbprintf(&sb, "%s %d\x00%s", blb.type, len(blb.data), blb.data)
+store_tree :: proc(db: ^Database, t: ^tree.Tree) {
+	content := tree.to_string(t)
+	t.oid = generate_hexdigest(transmute([]byte)content)
+	write_object(db, t.oid, content)
+}
+
+
+store_blob :: proc(db: ^Database, blb: ^blob.Blob) {
+	content := blob.to_string(blb)
 	blb.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, blb.oid, content)
 }
 
+store :: proc {
+	store_tree,
+	store_blob,
+}
+
 @(private)
 write_object :: proc(db: ^Database, oid: string, data: string) {
-	object_path := filepath.join([]string{db.db_path, oid[:2], oid[2:]})
-	dirname := filepath.dir(object_path)
+	object_path, o_err := os.join_path([]string{db.db_path, oid[:2], oid[2:]}, context.temp_allocator)
+	if o_err != nil {
+		fmt.println("error in creating object path", o_err)
+	}
+	dirname := filepath.dir(object_path, context.temp_allocator)
 	temp_file_name := generate_temp_name()
-	temp_path := filepath.join([]string{dirname, temp_file_name})
+	temp_path, t_err := os.join_path([]string{dirname, temp_file_name}, context.temp_allocator)
+
+	if t_err != nil {
+		fmt.println("error in creating temp_path", t_err)
+	}
 
 	if !os.exists(dirname) {
-		fmt.println("creating dir: ", dirname)
 		os.make_directory(dirname)
 	}
 
@@ -116,19 +134,20 @@ write_object :: proc(db: ^Database, oid: string, data: string) {
 	compressed_data := compress_data(data)
 	_, err = os.write(fd, compressed_data)
 	if err != nil {
-		fmt.println("Error in writing data")
+		fmt.println("Error in writing data", err)
 	}
 
 	err = os.rename(temp_path, object_path)
 
 	if err != nil {
-		fmt.println("Error in renaming file")
+		fmt.println("Error in renaming file", err)
 	}
 }
 
 @(private)
 generate_temp_name :: proc() -> string {
 	builder: strings.Builder
+	defer strings.builder_destroy(&builder)
 	strings.write_string(&builder, "temp_obj_#")
 	for _ in 0 ..= 6 {
 		ch := rand.choice(TEMP_CHARS[:])
@@ -149,7 +168,7 @@ compress_data :: proc(data: string) -> []byte {
 	}
 	defer zlib.deflateEnd(&z_stream)
 	data_len := len(data)
-	out_buf := make([]byte, data_len + 64)
+	out_buf := make([]byte, data_len + 64, context.temp_allocator)
 
 	z_stream.next_in = raw_data(data)
 	z_stream.avail_in = u32(data_len)
@@ -170,11 +189,11 @@ compress_data :: proc(data: string) -> []byte {
 @(private)
 generate_hexdigest :: proc(data: []byte) -> string {
 	ctx: sha1.Context
-	hash := make([]byte, 20)
+	hash := make([]byte, 20, context.temp_allocator)
 	sha1.init(&ctx)
 	sha1.update(&ctx, data)
 	sha1.final(&ctx, hash)
-	hexdigest := hex.encode(hash)
+	hexdigest := hex.encode(hash, context.temp_allocator)
 
 	return string(hexdigest)
 }

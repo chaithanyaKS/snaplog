@@ -15,7 +15,11 @@ init :: proc(data: []byte) -> (blb: Blob) {
 }
 
 to_string :: proc(blb: ^Blob) -> string {
-	sb: strings.Builder
+	sb := strings.builder_make()
 	defer strings.builder_destroy(&sb)
-	return fmt.sbprintf(&sb, "%s %d\x00%s", blb.type, len(blb.data), blb.data)
+
+	str := fmt.sbprintf(&sb, "%s %d %s", blb.type, len(blb.data), blb.data)
+	fmt.println(str)
+
+	return str
 }

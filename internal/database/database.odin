@@ -1,6 +1,7 @@
 package database
 
 import "../blob/"
+import "../commit/"
 import "../tree/"
 import "core:crypto/legacy/keccak"
 import "core:encoding/hex"
@@ -98,13 +99,21 @@ store_tree :: proc(db: ^Database, t: ^tree.Tree) {
 
 store_blob :: proc(db: ^Database, blb: ^blob.Blob) {
 	content := blob.to_string(blb)
+	fmt.printfln("blob: %s %T", content, content)
 	blb.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, blb.oid, content)
+}
+
+store_commit :: proc(db: ^Database, c: ^commit.Commit) {
+	content := commit.to_string(c)
+	c.oid = generate_hexdigest(transmute([]byte)content)
+	write_object(db, c.oid, content)
 }
 
 store :: proc {
 	store_tree,
 	store_blob,
+	store_commit,
 }
 
 @(private)
@@ -146,7 +155,7 @@ write_object :: proc(db: ^Database, oid: string, data: string) {
 
 @(private)
 generate_temp_name :: proc() -> string {
-	builder: strings.Builder
+	builder := strings.builder_make()
 	defer strings.builder_destroy(&builder)
 	strings.write_string(&builder, "temp_obj_#")
 	for _ in 0 ..= 6 {

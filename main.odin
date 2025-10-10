@@ -7,11 +7,17 @@ import "core:mem"
 import os "core:os/os2"
 import "core:strings"
 
+import "internal/author"
 import "internal/blob"
+import "internal/commit"
 import "internal/database"
 import "internal/entry"
 import "internal/tree"
 import "internal/workspace"
+
+GIT_AUTHOR_NAME :: "chaithanya"
+GIT_AUTHOR_EMAIL :: "chaithanya@test.com"
+GIT_MESSAGE :: "test message"
 
 main :: proc() {
 	when ODIN_DEBUG {
@@ -54,35 +60,48 @@ git_initialize_repo :: proc() -> os.Error {
 }
 
 git_commit_repo :: proc() -> (err: os.Error) {
+	files: [dynamic]string
+	entries: [dynamic]entry.Entry
+	name := GIT_AUTHOR_NAME
+	email := GIT_AUTHOR_EMAIL
+	message := GIT_MESSAGE
+
 	root_path := os.get_working_directory(context.temp_allocator) or_return
 	git_path := os.join_path([]string{root_path, ".snap"}, context.temp_allocator) or_return
 	db_path := os.join_path([]string{git_path, "objects"}, context.temp_allocator) or_return
-	files: [dynamic]string
-
+	head_path := os.join_path([]string{git_path, "HEAD"}, context.temp_allocator) or_return
 
 	ws := workspace.init(root_path)
 	db := database.init(db_path)
-
 	workspace.list_files(&ws, &files) or_return
-	entries: [dynamic]entry.Entry
 
 	for path in files {
 		data := workspace.read_file(&ws, path) or_return
 		blob := blob.init(data)
-
 		database.store(&db, &blob)
 
 		ent := entry.init(path, blob.oid)
 		append(&entries, ent)
 	}
 
-	tre := tree.init(entries)
-	database.store(&db, &tre)
+	t := tree.init(entries)
+	database.store(&db, &t)
+
+	author := author.init(name, email)
+	commit := commit.init(t.oid, &author, message)
+	database.store(&db, &commit)
+
+	fd := os.open(head_path, {.Write, .Create}) or_return
+	defer os.close(fd)
+
+	os.write_string(fd, commit.oid)
+	os.write_byte(fd, '\n')
+
+	fmt.println("[(root-commit)] ", commit.oid)
 
 	for f in files {
 		delete_string(f)
 	}
-
 	delete(files)
 	delete(entries)
 
@@ -92,7 +111,10 @@ git_commit_repo :: proc() -> (err: os.Error) {
 parse_command_line :: proc() {
 	args := os.args
 	if len(args) < 2 {
-		git_print_help()
+		err := git_commit_repo()
+		if err != nil {
+			log.fatal("Error when commiting repo", err)
+		}
 		return
 	}
 	sub_command := args[1]

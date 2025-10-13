@@ -23,18 +23,26 @@ init :: proc(ent: [dynamic]entry.Entry) -> (tree: Tree) {
 }
 
 to_string :: proc(t: ^Tree) -> string {
-	sb := strings.builder_make()
-	defer strings.builder_destroy(&sb)
+	sb := strings.builder_make(context.temp_allocator)
+
 	slice.sort_by(t.entries[:], proc(a, b: entry.Entry) -> bool {
 		return a.name < b.name
 	})
 
 	for ent in t.entries {
-		hashed_data := hex.encode(transmute([]byte)t.oid)
-		data := fmt.sbprintf(&sb, "%s %s\u0000%s", MODE, ent.name, hashed_data)
-		strings.write_string(&sb, data)
+		decoded_value, ok := hex.decode(transmute([]byte)ent.oid, context.temp_allocator)
+		if !ok {
+			panic("error in decoding string in trees")
+		}
+
+		// mode SP name NUL sha1(20 raw bytes)
+		_ = fmt.sbprintf(&sb, "%s %s\u0000", MODE, ent.name)
+		strings.write_string(&sb, transmute(string)decoded_value)
 	}
 
-	return strings.to_string(sb)
+	str := strings.to_string(sb)
+	res := fmt.tprintf("%s %d\u0000%s", t.type, len(str), str)
+
+	return res
 
 }

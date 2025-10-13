@@ -22,20 +22,15 @@ init :: proc(tree_oid: string, author: ^author.Author, message: string) -> (comm
 }
 
 to_string :: proc(c: ^Commit) -> string {
-	buf := strings.builder_make()
-	sb := strings.builder_make()
-	defer strings.builder_destroy(&buf)
-	defer strings.builder_destroy(&sb)
-
 	author_str := author.to_string(c.author)
-	commit_data := fmt.sbprintf(
-		&buf,
-		"tree %s\nauthor %s\ncommiter %s\n\n%s",
+	commit_data := fmt.tprintf(
+		"tree %s\nauthor %s\ncommiter %s\n\n%s\n",
 		c.tree_oid,
 		author_str,
 		author_str,
 		c.message,
 	)
+	str := fmt.tprintf("%s %d\u0000%s", c.type, len(commit_data), commit_data)
 
-	return fmt.sbprintf(&sb, "%s %d\u0000%s", c.type, len(commit_data), commit_data)
+	return str
 }

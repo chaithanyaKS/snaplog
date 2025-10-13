@@ -94,20 +94,22 @@ store_tree :: proc(db: ^Database, t: ^tree.Tree) {
 	content := tree.to_string(t)
 	t.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, t.oid, content)
+	fmt.println("tree ", t.oid)
 }
 
 
 store_blob :: proc(db: ^Database, blb: ^blob.Blob) {
 	content := blob.to_string(blb)
-	fmt.printfln("blob: %s %T", content, content)
 	blb.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, blb.oid, content)
+	fmt.println("Blob ", blb.oid)
 }
 
 store_commit :: proc(db: ^Database, c: ^commit.Commit) {
 	content := commit.to_string(c)
 	c.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, c.oid, content)
+	fmt.println("commit ", c.oid)
 }
 
 store :: proc {

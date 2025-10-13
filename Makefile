@@ -10,3 +10,6 @@ commit:
 
 build-snap:
 	odin build . -debug -out:build/snap
+
+vet:
+	odin build . -debug -out:build/snap -vet -strict-style

@@ -1,20 +1,18 @@
 package database
 
-import "../blob/"
-import "../commit/"
-import "../tree/"
-import "core:crypto/legacy/keccak"
-import "core:encoding/hex"
-import "core:hash"
-import "core:math/rand"
-import "core:path/filepath"
-
 import "core:crypto/legacy/sha1"
+import "core:encoding/hex"
 import "core:fmt"
+import "core:math/rand"
 import os "core:os/os2"
+import "core:path/filepath"
 import "core:strings"
 
 import "vendor:zlib"
+
+import "../blob/"
+import "../commit/"
+import "../tree/"
 
 TEMP_CHARS := [?]byte {
 	'0',
@@ -94,7 +92,6 @@ store_tree :: proc(db: ^Database, t: ^tree.Tree) {
 	content := tree.to_string(t)
 	t.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, t.oid, content)
-	fmt.println("tree ", t.oid)
 }
 
 
@@ -102,14 +99,12 @@ store_blob :: proc(db: ^Database, blb: ^blob.Blob) {
 	content := blob.to_string(blb)
 	blb.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, blb.oid, content)
-	fmt.println("Blob ", blb.oid)
 }
 
 store_commit :: proc(db: ^Database, c: ^commit.Commit) {
 	content := commit.to_string(c)
 	c.oid = generate_hexdigest(transmute([]byte)content)
 	write_object(db, c.oid, content)
-	fmt.println("commit ", c.oid)
 }
 
 store :: proc {

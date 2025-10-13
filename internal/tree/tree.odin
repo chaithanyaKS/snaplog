@@ -4,7 +4,6 @@ import "../entry/"
 import "core:encoding/hex"
 import "core:fmt"
 import "core:slice"
-import "core:sort"
 import "core:strings"
 
 MODE :: "100644"

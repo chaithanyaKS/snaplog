@@ -1,11 +1,9 @@
 package main
 
-import "core:flags"
 import "core:fmt"
 import "core:log"
 import "core:mem"
 import os "core:os/os2"
-import "core:strings"
 
 import "internal/author"
 import "internal/blob"
@@ -111,11 +109,7 @@ git_commit_repo :: proc() -> (err: os.Error) {
 parse_command_line :: proc() {
 	args := os.args
 	if len(args) < 2 {
-		err := git_commit_repo()
-		if err != nil {
-			log.fatal("Error when commiting repo", err)
-		}
-		return
+		git_print_help()
 	}
 	sub_command := args[1]
 	switch sub_command {

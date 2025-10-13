@@ -2,7 +2,6 @@ package commit
 
 import "../author/"
 import "core:fmt"
-import "core:strings"
 
 Commit :: struct {
 	oid:      string,

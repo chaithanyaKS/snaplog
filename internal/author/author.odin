@@ -1,7 +1,6 @@
 package author
 
 import "core:fmt"
-import "core:strings"
 import "core:time"
 
 Author :: struct {

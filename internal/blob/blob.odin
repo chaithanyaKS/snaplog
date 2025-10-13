@@ -1,7 +1,7 @@
 package blob
 
 import "core:fmt"
-import "core:strings"
+
 Blob :: struct {
 	data: []byte,
 	type: string,

@@ -1,8 +1,6 @@
 package workspace
 
-import "core:fmt"
 import os "core:os/os2"
-import "core:path/filepath"
 import "core:slice"
 import "core:strings"
 
@@ -33,8 +31,8 @@ list_files :: proc(ws: ^Workspace, files_list: ^[dynamic]string) -> (err: os.Err
 }
 
 read_file :: proc(ws: ^Workspace, path: string) -> (data: []byte, err: os.Error) {
-	path := os.join_path([]string{ws.path_name, path}, context.temp_allocator) or_return
-	data = os.read_entire_file_from_path(path, context.temp_allocator) or_return
+	new_path := os.join_path([]string{ws.path_name, path}, context.temp_allocator) or_return
+	data = os.read_entire_file_from_path(new_path, context.temp_allocator) or_return
 
 	return
 }

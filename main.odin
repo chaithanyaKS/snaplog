@@ -9,6 +9,7 @@ import os "core:os/os2"
 import "core:strings"
 import "core:time"
 
+import "internal/"
 import "internal/author"
 import "internal/blob"
 import "internal/commit"
@@ -62,7 +63,7 @@ git_initialize_repo :: proc() -> os.Error {
 	return nil
 }
 
-git_commit_repo :: proc() -> (err: os.Error) {
+git_commit_repo :: proc() -> (err: internal.Error) {
 	files: [dynamic]string
 	entries: [dynamic]entry.Entry
 	name := GIT_AUTHOR_NAME

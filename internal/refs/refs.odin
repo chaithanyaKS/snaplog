@@ -1,5 +1,7 @@
 package refs
 
+import "../../internal/"
+import "../lockfile/"
 import "core:fmt"
 import os "core:os/os2"
 
@@ -7,18 +9,22 @@ Refs :: struct {
 	pathname: string,
 }
 
+
 new :: proc(pathname: string) -> (ref: Refs) {
 	ref.pathname = pathname
 	return
 }
 
 
-update_head :: proc(r: ^Refs, oid: string) -> os.Error {
+update_head :: proc(r: ^Refs, oid: string) -> internal.Error {
 	head_path := os.join_path([]string{r.pathname, "HEAD"}, context.temp_allocator) or_return
-	fd := os.open(head_path, {.Write, .Create}) or_return
-	defer os.close(fd)
+	lf := lockfile.init(head_path)
 
-	os.write_string(fd, oid)
+	lockfile.hold_for_update(&lf) or_return
+
+	lockfile.write(&lf, oid) or_return
+	lockfile.write(&lf, "\n") or_return
+	lockfile.commit(&lf) or_return
 
 	return nil
 }

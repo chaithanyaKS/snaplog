@@ -1,9 +1,12 @@
 package main
 
+import "core:debug/pe"
 import "core:fmt"
 import "core:log"
+import "core:math/rand"
 import "core:mem"
 import os "core:os/os2"
+import "core:strings"
 import "core:time"
 
 import "internal/author"
@@ -100,7 +103,13 @@ git_commit_repo :: proc() -> (err: os.Error) {
 	database.store(&db, &commit)
 	refs.update_head(&r, commit.oid) or_return
 
-	fmt.println("[(root-commit)] ", commit.oid)
+	buf := strings.builder_make(context.temp_allocator)
+	if parent == "" {
+		strings.write_string(&buf, "[(root-commit)] ")
+	}
+	fmt.sbprintf(&buf, "%s %s", commit.oid, message)
+
+	fmt.println(strings.to_string(buf))
 
 	for f in files {
 		delete_string(f)

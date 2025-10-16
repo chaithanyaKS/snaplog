@@ -116,6 +116,9 @@ store :: proc {
 @(private)
 write_object :: proc(db: ^Database, oid: string, data: string) {
 	object_path, o_err := os.join_path([]string{db.db_path, oid[:2], oid[2:]}, context.temp_allocator)
+	if os.exists(object_path) {
+		return
+	}
 	if o_err != nil {
 		fmt.println("error in creating object path", o_err)
 	}

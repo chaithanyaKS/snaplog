@@ -6,17 +6,17 @@ import "core:time"
 Author :: struct {
 	name:  string,
 	email: string,
+	time:  i64,
 }
 
-init :: proc(name: string, email: string) -> (author: Author) {
+init :: proc(name: string, email: string, time: i64) -> (author: Author) {
 	author.name = name
 	author.email = email
+	author.time = time
 
 	return
 }
 
 to_string :: proc(a: ^Author) -> string {
-	now := time.now()
-	unix_time := time.to_unix_seconds(now)
-	return fmt.tprintf("%s <%s> %d", a.name, a.email, unix_time)
+	return fmt.tprintf("%s <%s> %d", a.name, a.email, a.time)
 }

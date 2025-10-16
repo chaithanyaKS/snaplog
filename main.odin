@@ -4,12 +4,14 @@ import "core:fmt"
 import "core:log"
 import "core:mem"
 import os "core:os/os2"
+import "core:time"
 
 import "internal/author"
 import "internal/blob"
 import "internal/commit"
 import "internal/database"
 import "internal/entry"
+import "internal/refs"
 import "internal/tree"
 import "internal/workspace"
 
@@ -63,6 +65,7 @@ git_commit_repo :: proc() -> (err: os.Error) {
 	name := GIT_AUTHOR_NAME
 	email := GIT_AUTHOR_EMAIL
 	message := GIT_MESSAGE
+	current_time := time.to_unix_seconds(time.now())
 
 	root_path := os.get_working_directory(context.temp_allocator) or_return
 	git_path := os.join_path([]string{root_path, ".snap"}, context.temp_allocator) or_return
@@ -71,6 +74,7 @@ git_commit_repo :: proc() -> (err: os.Error) {
 
 	ws := workspace.init(root_path)
 	db := database.init(db_path)
+	r := refs.new(git_path)
 	workspace.list_files(&ws, &files) or_return
 
 	for path in files {
@@ -85,23 +89,24 @@ git_commit_repo :: proc() -> (err: os.Error) {
 	t := tree.init(entries)
 	database.store(&db, &t)
 
-	author := author.init(name, email)
-	commit := commit.init(t.oid, &author, message)
+	parent, err1 := refs.read_head(&r)
+	if err1 != nil {
+		fmt.println(err1)
+	}
+
+	author := author.init(name, email, current_time)
+	commit := commit.init(parent, t.oid, &author, message)
+
 	database.store(&db, &commit)
-
-	fd := os.open(head_path, {.Write, .Create}) or_return
-	defer os.close(fd)
-
-	os.write_string(fd, commit.oid)
-	os.write_byte(fd, '\n')
+	refs.update_head(&r, commit.oid) or_return
 
 	fmt.println("[(root-commit)] ", commit.oid)
 
 	for f in files {
 		delete_string(f)
 	}
-	delete(files)
-	delete(entries)
+	delete_dynamic_array(files)
+	delete_dynamic_array(entries)
 
 	return nil
 }

@@ -5,7 +5,10 @@ init:
 
 commit:
 	rm -rf .snap
+	rm test.txt
 	odin run . -debug -- init
+	odin run . -debug -- commit
+	echo "test" > test.txt
 	odin run . -debug -- commit
 
 build-snap:

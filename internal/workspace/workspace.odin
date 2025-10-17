@@ -1,6 +1,9 @@
 package workspace
 
+import "../../internal/"
+import "base:runtime"
 import "core:fmt"
+import "core:mem"
 import os "core:os/os2"
 import "core:slice"
 import "core:strings"
@@ -27,7 +30,14 @@ list_files :: proc(ws: ^Workspace, files_list: ^[dynamic]string) -> (err: os.Err
 			append(files_list, name) or_return
 		}
 	}
+	return
+}
 
+stat_file :: proc(w: ^Workspace, path: string) -> (s: os.File_Type, err: internal.Error) {
+	full_path := os.join_path([]string{w.path_name, path}, context.temp_allocator) or_return
+	stat := os.stat(full_path, context.temp_allocator) or_return
+	defer os.file_info_delete(stat, context.temp_allocator)
+	s = stat.type
 	return
 }
 

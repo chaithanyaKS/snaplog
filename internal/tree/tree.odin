@@ -6,8 +6,6 @@ import "core:fmt"
 import "core:slice"
 import "core:strings"
 
-MODE :: "100644"
-
 Tree :: struct {
 	entries: [dynamic]entry.Entry,
 	oid:     string,
@@ -35,7 +33,7 @@ to_string :: proc(t: ^Tree) -> string {
 		}
 
 		// mode SP name NUL sha1(20 raw bytes)
-		_ = fmt.sbprintf(&sb, "%s %s\u0000", MODE, ent.name)
+		_ = fmt.sbprintf(&sb, "%s %s\u0000", ent.mode, ent.name)
 		strings.write_string(&sb, transmute(string)decoded_value)
 	}
 

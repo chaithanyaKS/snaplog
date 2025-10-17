@@ -85,8 +85,8 @@ git_commit_repo :: proc() -> (err: internal.Error) {
 		data := workspace.read_file(&ws, path) or_return
 		blob := blob.init(data)
 		database.store(&db, &blob)
-
-		ent := entry.init(path, blob.oid)
+		file_type := workspace.stat_file(&ws, path) or_return
+		ent := entry.init(path, blob.oid, &file_type)
 		append(&entries, ent)
 	}
 
